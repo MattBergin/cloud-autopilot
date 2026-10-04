@@ -5,6 +5,7 @@ import { findEc2Opportunities } from "./aws/ec2.js";
 import { findEbsOpportunities } from "./aws/ebs.js";
 import { listCostOptimizationRecommendations } from "./aws/recommendations.js";
 import { generateTerraformPlan } from "./terraform/plan.js";
+import { createPullRequestBundle } from "./github/pull-request.js";
 import type { ChangePlan, SavingsOpportunity } from "./types.js";
 
 export function createServer() {
@@ -53,6 +54,16 @@ export function createServer() {
       evidence: z.record(z.unknown()).default({}),
     })) }, async ({ opportunities }) => ({
       content: [{ type: "text", text: JSON.stringify(generateTerraformPlan(opportunities), null, 2) }],
+    }));
+
+  server.tool("generate_github_change_bundle",
+    "Generate a GitHub-ready PR bundle from opportunities. Never creates a PR or changes AWS.",
+    { opportunities: z.array(z.object({
+      id: z.string(), resourceType: z.string(), resourceId: z.string(), action: z.string(),
+      reason: z.string(), estimatedMonthlySavings: z.number(),
+      safety: z.enum(["SAFE", "REVIEW", "DO_NOT_AUTOMATE"]), evidence: z.record(z.unknown()).default({}),
+    })) }, async ({ opportunities }) => ({
+      content: [{ type: "text", text: JSON.stringify(createPullRequestBundle(opportunities), null, 2) }],
     }));
 
   return server;
