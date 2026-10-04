@@ -6,7 +6,7 @@ import { findEbsOpportunities } from "./aws/ebs.js";
 import { listCostOptimizationRecommendations } from "./aws/recommendations.js";
 import { generateTerraformPlan } from "./terraform/plan.js";
 import { createPullRequestBundle } from "./github/pull-request.js";
-import { createApprovalManifest } from "./approval/manifest.js";
+import { createApprovalManifest, validateApprovalManifest, type ApprovalManifest } from "./approval/manifest.js";
 import type { ChangePlan, SavingsOpportunity } from "./types.js";
 
 export function createServer() {
@@ -76,6 +76,31 @@ export function createServer() {
     })).min(1) }, async ({ approvedBy, opportunities }) => ({
       content: [{ type: "text", text: JSON.stringify(createApprovalManifest(opportunities, approvedBy), null, 2) }],
     }));
+
+  server.tool("validate_approval_manifest",
+    "Re-scan AWS opportunities and validate that a previously created approval manifest still matches. Never mutates AWS.",
+    { manifest: z.object({
+      manifestVersion: z.literal(1),
+      generatedAt: z.string(),
+      approvalId: z.string(),
+      approvedBy: z.string().min(1),
+      source: z.literal("human"),
+      opportunities: z.array(z.object({
+        opportunityId: z.string(),
+        action: z.string(),
+        resourceId: z.string(),
+        expectedMonthlySavings: z.number(),
+        safety: z.enum(["SAFE", "REVIEW"]),
+      })).min(1),
+    }) },
+    async ({ manifest }) => {
+      const [hub, ec2, ebs] = await Promise.all([
+        listCostOptimizationRecommendations(), findEc2Opportunities(), findEbsOpportunities(),
+      ]);
+      const current = [...hub, ...ec2, ...ebs];
+      const validation = validateApprovalManifest(manifest as ApprovalManifest, current);
+      return { content: [{ type: "text", text: JSON.stringify(validation, null, 2) }] };
+    });
 
   return server;
 }

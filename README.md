@@ -12,7 +12,10 @@ The first release is intentionally read-only:
 - EBS inventory and unattached-volume signals
 - deterministic safety classification
 - structured change plans
-- no destructive AWS mutations
+- Terraform/GitHub review artifacts
+- human approval manifests
+- read-only approval revalidation
+- no destructive AWS mutations exposed through MCP
 
 ## Requirements
 
@@ -36,5 +39,9 @@ The server communicates over stdio and exposes:
 - `scan_costs`
 - `find_savings`
 - `generate_change_plan`
+- `generate_terraform_plan`
+- `generate_github_change_bundle`
+- `create_approval_manifest`
+- `validate_approval_manifest`
 
-Mutation tools are deliberately not exposed in the MVP.
+The repository contains a narrowly scoped EBS deletion executor for testing the mutation boundary, but it is deliberately **not exposed through MCP** and the IAM policy remains read-only.
