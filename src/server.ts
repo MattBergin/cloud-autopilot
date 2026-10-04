@@ -6,6 +6,7 @@ import { findEbsOpportunities } from "./aws/ebs.js";
 import { listCostOptimizationRecommendations } from "./aws/recommendations.js";
 import { generateTerraformPlan } from "./terraform/plan.js";
 import { createPullRequestBundle } from "./github/pull-request.js";
+import { createApprovalManifest } from "./approval/manifest.js";
 import type { ChangePlan, SavingsOpportunity } from "./types.js";
 
 export function createServer() {
@@ -64,6 +65,16 @@ export function createServer() {
       safety: z.enum(["SAFE", "REVIEW", "DO_NOT_AUTOMATE"]), evidence: z.record(z.unknown()).default({}),
     })) }, async ({ opportunities }) => ({
       content: [{ type: "text", text: JSON.stringify(createPullRequestBundle(opportunities), null, 2) }],
+    }));
+
+  server.tool("create_approval_manifest",
+    "Create a human approval manifest bound to exact opportunity IDs, actions, resources, and savings estimates. Does not mutate AWS.",
+    { approvedBy: z.string().min(1), opportunities: z.array(z.object({
+      id: z.string(), resourceType: z.string(), resourceId: z.string(), action: z.string(),
+      reason: z.string(), estimatedMonthlySavings: z.number(),
+      safety: z.enum(["SAFE", "REVIEW", "DO_NOT_AUTOMATE"]), evidence: z.record(z.unknown()).default({}),
+    })).min(1) }, async ({ approvedBy, opportunities }) => ({
+      content: [{ type: "text", text: JSON.stringify(createApprovalManifest(opportunities, approvedBy), null, 2) }],
     }));
 
   return server;
