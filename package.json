@@ -1,0 +1,30 @@
+{
+  "name": "cloud-autopilot",
+  "version": "0.1.0",
+  "description": "MCP server for safe AWS cost analysis and remediation planning",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "cloud-autopilot": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cost-explorer": "^3.896.0",
+    "@aws-sdk/client-cost-optimization-hub": "^3.896.0",
+    "@aws-sdk/client-ec2": "^3.896.0",
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
